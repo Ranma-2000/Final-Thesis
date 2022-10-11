@@ -4,7 +4,6 @@ import serial
 import time
 import re
 from biosppy.signals import ecg
-from utils import QRS_util
 import xgboost as xgb
 
 model = xgb.XGBClassifier()
@@ -17,6 +16,8 @@ heartbeats = np.zeros(1250).astype(int)
 heartbeats = list(heartbeats)
 time_list = []
 count = 0
+
+print('Success! Built a Docker Image and can run a container\n')
 
 try:
     while True:

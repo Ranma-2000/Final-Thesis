@@ -6,11 +6,12 @@ import re
 from biosppy.signals import ecg
 import xgboost as xgb
 
+
 model = xgb.XGBClassifier()
 model.load_model('xgb_ecg.model')
 
 baud_rate = 115200
-port = 'COM3'
+port = '/dev/ttyACM0'
 
 heartbeats = np.zeros(1250).astype(int)
 heartbeats = list(heartbeats)
@@ -83,22 +84,11 @@ try:
                                     beats = np.pad(beats, (0, zerocount), 'constant', constant_values=(0.0, 0.0))
                                     beats_df = pd.DataFrame(beats)
                                     beats_df = beats_df.T
-                                    # print(heartbeats)
-                                    # print(R_peaks)
-                                    # print(f'Len: {len(beats)}\n')
-                                    # print(beats_df)
                                     result = model.predict(beats_df)
                                     if result == 0:
                                         print("Normal")
                                     else:
                                         print("Abnormal")
-                                # try:
-                                #     R_peaks, S_pint, Q_point = EKG_QRS_detect(heartbeats, 125, False, False)
-                                #     print(R_peaks)
-                                # except:
-                                #     continue
-                                # finally:
-                                #     print('Failed')
             else:
                 z1serial.close()
                 print(f'{port} not open or Already in use')

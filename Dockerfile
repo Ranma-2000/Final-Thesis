@@ -8,5 +8,5 @@ ADD read_com.py .
 
 ADD xgb_ecg.model .
 
-CMD [ "python3", "read_com.py"]
+CMD [ "python3", "-u", "read_com.py"]
 

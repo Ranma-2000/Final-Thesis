@@ -4,14 +4,13 @@ import serial
 import time
 import re
 from biosppy.signals import ecg
-from utils import QRS_util
+from realtime_processing import *
 import xgboost as xgb
 
 model = xgb.XGBClassifier()
 model.load_model('xgb_ecg.model')
 
-baud_rate = 115200
-port = 'COM3'
+port = get_available_port()
 
 heartbeats = np.zeros(1250).astype(int)
 heartbeats = list(heartbeats)
@@ -19,9 +18,9 @@ time_list = []
 count = 0
 
 try:
+    z1serial = connect_serial_port(port)
     while True:
         try:
-            z1serial = serial.Serial(port=port, baudrate=baud_rate, timeout=1)
             if z1serial.is_open:
                 start = time.time()
                 while True:
@@ -58,15 +57,15 @@ try:
                                 except:
                                     continue
                                 if len(R_peaks) >= 5:
-                                    count += 1
-                                    print(f'Index :{count}')
-                                    with open(f'{count}.csv', 'w+') as file:
-                                        for beat in heartbeats:
-                                            file.writelines(f'{beat}\n')
-                                    with open(f'{count}_R.csv', 'w+') as file:
-                                        for rpeak in R_peaks:
-                                            file.writelines(f'{rpeak}')
-                                    print(R_peaks)
+                                    # count += 1
+                                    # print(f'Index :{count}')
+                                    # with open(f'{count}.csv', 'w+') as file:
+                                    #     for beat in heartbeats:
+                                    #         file.writelines(f'{beat}\n')
+                                    # with open(f'{count}_R.csv', 'w+') as file:
+                                    #     for rpeak in R_peaks:
+                                    #         file.writelines(f'{rpeak}')
+                                    # print(R_peaks)
                                     for i in range(0, len(R_peaks) - 1):
                                         time_interval = R_peaks[i + 1] - R_peaks[i]
                                         list_time_interval.append(time_interval)
@@ -79,7 +78,7 @@ try:
                                     beats = (beats - beats.min()) / beats.ptp()
                                     # Pad with zeroes.
                                     zerocount = 187 - beats.size
-                                    beats = np.pad(beats, (0, zerocount), 'constant', constant_values=(0.0, 0.0))
+                                    beats = np.pad(beats, (0, zerocount), 'constant', constant_values=(0.0, 0.0))  # Might occur ValueError
                                     beats_df = pd.DataFrame(beats)
                                     beats_df = beats_df.T
                                     # print(heartbeats)
@@ -99,11 +98,11 @@ try:
                                 # finally:
                                 #     print('Failed')
             else:
-                z1serial.close()
                 print(f'{port} not open or Already in use')
         except serial.SerialException:
             print(f'{port} not open')
-            time.sleep(1)
+        except ValueError:
+            z1serial.close()
 except KeyboardInterrupt:
     z1serial.close()
     print('Mean elapsed time: ', sum(time_list) / len(time_list))

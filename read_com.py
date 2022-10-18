@@ -4,7 +4,6 @@ import serial
 import time
 import re
 from biosppy.signals import ecg
-from utils import QRS_util
 import xgboost as xgb
 
 model = xgb.XGBClassifier()

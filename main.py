@@ -5,6 +5,7 @@ import re
 from biosppy.signals import ecg
 from realtime_processing import *
 import xgboost as xgb
+import logging
 
 
 def run(device_serial_object, port, model):
@@ -34,7 +35,8 @@ def run(device_serial_object, port, model):
                             list_time_interval = []
                             output = ecg.ecg(np.array(heartbeats), 125, None, False, False)
                             R_peaks = output['rpeaks']
-                        except:
+                        except BaseException:
+                            logging.exception("An exception was thrown!")
                             continue
                         if len(R_peaks) >= 5:
                             for i in range(0, len(R_peaks) - 1):
@@ -64,7 +66,8 @@ def run(device_serial_object, port, model):
         device_serial_object.close()
     except KeyboardInterrupt:
         device_serial_object.close()
-        print('Mean elapsed time: ', sum(time_list) / len(time_list))
+        if len(time_list) > 0:
+            print('Mean elapsed time: ', sum(time_list) / len(time_list))
         print('Exit')
 
 

@@ -1,6 +1,7 @@
 import serial.tools.list_ports
 import serial
 
+
 def get_available_port():
     ports = serial.tools.list_ports.comports()
     connected_port = []

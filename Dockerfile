@@ -4,7 +4,7 @@ COPY requirements.txt requirements.txt
 
 RUN pip3 install -r requirements.txt
 
-ADD read_com.py .
+ADD main.py .
 
 ADD xgb_ecg.model .
 

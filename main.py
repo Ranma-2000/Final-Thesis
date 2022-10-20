@@ -1,11 +1,12 @@
+from biosppy.signals import ecg
+from connect_local_port import *
+from data_processing import *
+import xgboost as xgb
+import logging
 import numpy as np
 import pandas as pd
 import time
 import re
-from biosppy.signals import ecg
-from connect_local_port import *
-import xgboost as xgb
-import logging
 
 
 def run(device_serial_object, port, model):
@@ -48,6 +49,8 @@ def run(device_serial_object, port, model):
                             beats = np.array(beats)
                             # Normalize the readings to a 0-1 range for ML purposes.
                             beats = (beats - beats.min()) / beats.ptp()
+                            input_beat = DataPreprocessing(beats)
+                            beats = input_beat.moving_average(3)  # Might occur TypeError
                             # Pad with zeroes.
                             zerocount = 187 - beats.size
                             beats = np.pad(beats, (0, zerocount), 'constant', constant_values=(0.0, 0.0))  # Might occur ValueError
@@ -60,6 +63,8 @@ def run(device_serial_object, port, model):
                                 print("Abnormal")
                         end = time.time()
                         time_list.append(end - start)
+    except TypeError:
+        device_serial_object.close()
     except serial.SerialException:
         print(f'{port} not open or already in use')
     except ValueError:

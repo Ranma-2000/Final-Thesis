@@ -8,7 +8,7 @@ ADD main.py .
 
 ADD xgb_ecg.model .
 
-ADD realtime_processing.py .
+ADD connect_local_port.py .
 
 CMD [ "python3", "-u", "main.py"]
 

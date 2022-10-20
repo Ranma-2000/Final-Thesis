@@ -16,4 +16,4 @@ def connect_serial_port(port, baud_rate=115200):
     serial_port = serial.Serial(port=port, baudrate=baud_rate, timeout=1)
     return serial_port
 
-# def get_realtime_data():
+

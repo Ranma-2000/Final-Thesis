@@ -3,7 +3,7 @@ import pandas as pd
 import time
 import re
 from biosppy.signals import ecg
-from realtime_processing import *
+from connect_local_port import *
 import xgboost as xgb
 import logging
 

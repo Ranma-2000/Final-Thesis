@@ -74,6 +74,11 @@ def run(device_serial_object, port, model):
 if __name__ == "__main__":
     xgb_model = xgb.XGBClassifier()
     xgb_model.load_model('xgb_ecg.model')
-    active_port = get_available_port()
-    serial_port = connect_serial_port(active_port)
-    run(serial_port, active_port, xgb_model)
+    try:
+        active_port = get_available_port()
+        print(active_port)
+    except IndexError:
+        active_port = "COM4"
+    finally:
+        serial_port = connect_serial_port(active_port)
+        run(serial_port, active_port, xgb_model)

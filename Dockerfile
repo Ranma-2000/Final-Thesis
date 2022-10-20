@@ -8,5 +8,7 @@ ADD main.py .
 
 ADD xgb_ecg.model .
 
-CMD [ "python3", "-u", "read_com.py"]
+ADD realtime_processing.py .
+
+CMD [ "python3", "-u", "main.py"]
 

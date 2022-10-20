@@ -3,6 +3,7 @@ import serial
 
 
 def get_available_port():
+    print("Get start!")
     ports = serial.tools.list_ports.comports()
     connected_port = []
     for port, desc, hwid in sorted(ports):

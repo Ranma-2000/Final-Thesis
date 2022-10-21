@@ -7,12 +7,12 @@ import numpy as np
 import pandas as pd
 import time
 import re
+import pickle
+import socket
 
-
-def run(device_serial_object, port, model):
-    heartbeats = np.zeros(1250).astype(int)
-    heartbeats = list(heartbeats)
-    time_list = []
+def run(device_serial_object, port, model, input_heartbeat):
+    # time_list = []
+    heartbeats = input_heartbeat
     try:
         while device_serial_object.is_open:
             size = device_serial_object.inWaiting()
@@ -24,7 +24,7 @@ def run(device_serial_object, port, model):
                     continue
                 else:
                     if len(res) > 0:
-                        start = time.time()
+                        # start = time.time()
                         res = re.sub("\r\n", ",", res)
                         res = res.split(",")
                         for heartbeat_data in res:
@@ -61,8 +61,11 @@ def run(device_serial_object, port, model):
                                 print("Normal")
                             else:
                                 print("Abnormal")
-                        end = time.time()
-                        time_list.append(end - start)
+                            print(beats)
+                            return pickle.dumps(beats), heartbeats
+                        # end = time.time()
+                        # time_list.append(end - start)
+
     except TypeError:
         device_serial_object.close()
     except serial.SerialException:
@@ -77,8 +80,17 @@ def run(device_serial_object, port, model):
 
 
 if __name__ == "__main__":
+    HOST = '127.0.0.1'
+    PORT = 8000
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_address = (HOST, PORT)
+    print('connecting to %s port ' + str(server_address))
+    s.connect(server_address)
     xgb_model = xgb.XGBClassifier()
     xgb_model.load_model('xgb_ecg.model')
+    output_heartbeats = np.zeros(1250).astype(int)
+    output_heartbeats = list(output_heartbeats)
     try:
         active_port = get_available_port()
         print(active_port)
@@ -86,4 +98,7 @@ if __name__ == "__main__":
         active_port = "COM4"
     finally:
         serial_port = connect_serial_port(active_port)
-        run(serial_port, active_port, xgb_model)
+        while True:
+            msg, output_heartbeats = run(serial_port, active_port, xgb_model, output_heartbeats)
+            print(f"Sent {len(msg)}")
+            s.send(msg)

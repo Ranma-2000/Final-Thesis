@@ -49,14 +49,14 @@ for count_loop in range(0, 100, 1):  # IndexError if len(ecg_data)%16 != 0
             if not np.array_equal(previous_R_peaks, R_peaks):
                 print('Peaks changed')
                 matching_size = []
-                print(R_peaks)
-                print(previous_R_peaks)
-                for starting_index in range(0, len(R_peaks), 1):
+                print("R_peaks", R_peaks)
+                print("previous_R_peaks", previous_R_peaks)
+                for starting_index in range(0, len(R_peaks) - 1, 1):
                     print("Starting matching index: ", starting_index)
                     size = 0
                     for i in range(starting_index, len(R_peaks), 1):
-                        print(R_peaks[starting_index:starting_index + size], previous_R_peaks[0:size])
-                        if R_peaks[starting_index:starting_index + size] == previous_R_peaks[0:size]:
+                        print(R_peaks[starting_index:i], previous_R_peaks[0:i])
+                        if R_peaks[starting_index:i] == previous_R_peaks[0:i]:
                             # print('Size', size)
                             size += 1
                             print(f'Matching {previous_R_peaks[starting_index:starting_index + size], R_peaks[0:size]}')
@@ -69,4 +69,4 @@ for count_loop in range(0, 100, 1):  # IndexError if len(ecg_data)%16 != 0
             previous_R_peaks_index = R_peaks_index
     except BaseException:
         logging.exception("Error")
-        continue
+        break

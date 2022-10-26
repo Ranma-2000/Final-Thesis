@@ -6,6 +6,21 @@ import pandas as pd
 import xgboost as xgb
 from biosppy.signals import ecg
 from data_processing import *
+from database import DatabaseHandler
+import time
+
+
+def create_json(measurement='ecg', userid='6c89f539-71c6-490d-a28d-6c5d84c0ee2f', data_point=0.0):
+    json_body = {
+        "measurement": measurement,
+        "tags": {
+            "id": userid,
+        },
+        "fields": {
+            "value": data_point
+        }
+    }
+    return json_body
 
 
 class LoadModel:
@@ -55,6 +70,7 @@ class LoadModel:
             return output, message
 
     def predict(self, data):
+        data = np.array(data)
         status, obj = self.data_preprocessing(data)
         if status:
             result = self.model.predict(obj)
@@ -79,6 +95,7 @@ class ServerHandler:
         self.conn = None
         self.addr = None
         self.server = None
+        # self.database = DatabaseHandler(host="localhost", port=8086, username="admin", password="bete1010")
 
     def connect(self):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -93,14 +110,24 @@ class ServerHandler:
             self.MODEL.create_model()
             self.MODEL.load_model()
             while connected:
+                start = time.time()
                 msg = self.conn.recv(7000).decode(self.ENCODING_FORMAT)
                 if msg == self.DISCONNECT_MESSAGE:
                     connected = False
                 else:
                     print(f"[{self.addr}] Sent {type(msg[0])}, Length: {len(msg)}")
                     data = [float(d) for d in msg.split(',')]
-                    data = np.array(data)
+                    # for d in data:
+                    #     time_series_data.append(create_json(data_point=d))
+                    # self.database.json_body = time_series_data
+                    # self.database.insert_data()
                     output = self.MODEL.predict(data)
+                    # output = "Sent"
                     self.conn.send(output.encode(self.ENCODING_FORMAT))
+                end = time.time()
+                print(end - start)
         except:
             self.conn.close()
+            self.database.close()
+
+

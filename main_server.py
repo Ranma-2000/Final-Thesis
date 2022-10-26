@@ -4,7 +4,7 @@ server = ServerHandler()
 server.connect()
 
 print(f"[LISTENING] Server is listening on {server.SERVER_NAME}")
-while True:
-    server.client_accept()
+server.client_accept()
+
 
 

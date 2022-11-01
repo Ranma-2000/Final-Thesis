@@ -1,7 +1,8 @@
 import re
 import socket
-import logging
 from connect_local_port import *
+from timeit import default_timer as timer
+from datetime import timedelta
 
 
 class Device:
@@ -23,36 +24,29 @@ class ClientHandler:
 
     def get_data(self, heartbeats):
         heartbeats = heartbeats
-        try:
-            while self.device.is_open:
-                size = self.device.inWaiting()
-                if size:
-                    data = self.device.read(size)
-                    res = data.decode("utf-8")
-                    x = re.findall(b"\x1b", data)
-                    if len(x) != 0:
-                        continue
-                    else:
-                        if len(res) > 0:
-                            res = re.sub("\r\n", ",", res)
-                            res = res.split(",")
-                            for heartbeat_data in res:
-                                heartbeat_data = heartbeat_data.strip()
-                                if len(heartbeat_data) > 0:
-                                    heartbeats.append(str(heartbeat_data))
-                                    del heartbeats[0]
-                            output = ','.join(heartbeats).encode('utf-8')
-                            return output
-        except BaseException:
-            logging.exception("An exception was thrown!")
-            pass
+        while self.device.is_open:
+            size = self.device.inWaiting()
+            if size:
+                data = self.device.read(size)
+                res = data.decode("utf-8")
+                x = re.findall(b"\x1b", data)
+                if len(x) != 0:
+                    continue
+                else:
+                    if len(res) > 0:
+                        res = re.sub("\r\n", ",", res)
+                        res = res.split(",")
+                        for heartbeat_data in res:
+                            heartbeat_data = heartbeat_data.strip()
+                            if len(heartbeat_data) > 0:
+                                heartbeats.append(str(heartbeat_data))
+                                del heartbeats[0]
+                        output = ','.join(heartbeats).encode('utf-8')
+                        return output
 
     def run(self, init_heartbeats):
-        try:
-            msg = self.get_data(init_heartbeats)
-            self.SERVER_CONNECTION.sendall(msg)
-            feedback = self.SERVER_CONNECTION.recv(1024).decode('utf-8')
+        msg = self.get_data(init_heartbeats)
+        self.SERVER_CONNECTION.sendall(msg)
+        feedback = self.SERVER_CONNECTION.recv(1024).decode('utf-8')
+        if feedback != ' ':
             print(feedback)
-        except BaseException:
-            logging.exception("An exception was thrown!")
-            pass

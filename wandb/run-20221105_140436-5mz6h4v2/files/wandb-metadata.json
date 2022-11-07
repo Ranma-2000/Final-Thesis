@@ -1,0 +1,49 @@
+{
+    "os": "Windows-10-10.0.19043-SP0",
+    "python": "3.10.8",
+    "heartbeatAt": "2022-11-05T07:04:41.064929",
+    "startedAt": "2022-11-05T07:04:36.906421",
+    "docker": null,
+    "cuda": null,
+    "args": null,
+    "state": "running",
+    "program": "xgboost.ipynb",
+    "root": "C:/Users/DELL/PycharmProjects/Final-Thesis",
+    "git": {
+        "remote": "https://github.com/Ranma-2000/Final-Thesis.git",
+        "commit": "4fab550c9c6be89e25692aa40e17cb18a8368053"
+    },
+    "email": "peterpham.pct000@gmail.com",
+    "host": "DESKTOP-KN1SOER",
+    "username": "DELL",
+    "executable": "C:\\Users\\DELL\\PycharmProjects\\Final-Thesis\\venv\\Scripts\\python.exe",
+    "cpu_count": 8,
+    "cpu_count_logical": 16,
+    "cpu_freq": {
+        "current": 3201.0,
+        "min": 0.0,
+        "max": 3201.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 3201.0,
+            "min": 0.0,
+            "max": 3201.0
+        }
+    ],
+    "disk": {
+        "total": 465.1487503051758,
+        "used": 228.13661575317383
+    },
+    "gpu": "GeForce RTX 3060 Laptop GPU",
+    "gpu_count": 1,
+    "gpu_devices": [
+        {
+            "name": "GeForce RTX 3060 Laptop GPU",
+            "memory_total": 6442450944
+        }
+    ],
+    "memory": {
+        "total": 31.351802825927734
+    }
+}

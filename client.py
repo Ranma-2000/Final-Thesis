@@ -12,7 +12,7 @@ class Device:
 
 
 class ClientHandler:
-    def __init__(self, host='192.168.16.1', port=5050):
+    def __init__(self, host='192.168.1.11', port=5050):
         self.HOST = host
         self.PORT = port
         self.SERVER_CONNECTION = None

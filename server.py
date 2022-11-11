@@ -22,7 +22,6 @@ def create_json(measurement='ecg', userid='6c89f539-71c6-490d-a28d-6c5d84c0ee2f'
     }
     return json_body
 
-
 class LoadModel:
     def __init__(self, model_mode):
         self.mode = model_mode
@@ -147,7 +146,6 @@ class ServerHandler:
         self.conn = None
         self.addr = None
         self.server = None
-        self.count_loop = 0
         # self.database = DatabaseHandler(host="localhost", port=8086, username="admin", password="bete1010")
 
     def connect(self):
@@ -164,7 +162,6 @@ class ServerHandler:
             self.MODEL.load_model()
             while connected:
                 start = time.time()
-                self.count_loop += 1
                 msg = self.conn.recv(7000).decode(self.ENCODING_FORMAT)
                 if msg == self.DISCONNECT_MESSAGE:
                     connected = False
@@ -190,6 +187,7 @@ class ServerHandler:
                     # output = t2.join()
                     # print(data[-10:-1])
                     output = self.MODEL.predict(data)
+
                     # output = "Sent"
                     self.conn.send(output.encode(self.ENCODING_FORMAT))
                 end = time.time()

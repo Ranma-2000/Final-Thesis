@@ -127,3 +127,5 @@ dmypy.json
 
 # Ignore data
 data/
+
+wandb

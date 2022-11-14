@@ -129,7 +129,7 @@ while device.is_open:
                                 # Pad with zeroes.
                                 zerocount = 187 - beats.size
                                 beats = np.pad(beats, (0, zerocount), 'constant', constant_values=(0.0, 0.0))[np.newaxis]  # Might occur ValueError
-                                pd.DataFrame(beats).to_csv(f'{loop}.csv')
+                                # pd.DataFrame(beats).to_csv(f'{loop}.csv')
                                 result = xgb_model.predict(beats)
                                 if result == 0:
                                     output = "Normal"

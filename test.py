@@ -1,15 +1,9 @@
-import serial.tools.list_ports
-comlist = serial.tools.list_ports.comports()
-connected = []
-for element in comlist:
-    connected.append(element.device)
-print("Connected COM ports: " + str(connected))
-baud_rate = 115200
-port = connected[1]
-z1serial = serial.Serial(port=port, baudrate=baud_rate, timeout=1)
+import influxdb_client, os, time
+from influxdb_client import InfluxDBClient, Point, WritePrecision
+from influxdb_client.client.write_api import SYNCHRONOUS
 
-if z1serial.is_open():
-    size = z1serial.inWaiting()
-    data = z1serial.read(size)
-    res = data.decode("utf-8")
-    print(res)
+token = "jv0vc7lfTuKACYxvWu_n6rgEbPMgwy4s72YFUnqnPUrpnvSpA0iNVs4qlH3Jz3l2h3enAb2zcW191KbjeS2GUg=="
+org = "18146115@student.hcmute.edu.vn"
+url = "https://us-east-1-1.aws.cloud2.influxdata.com"
+
+client = influxdb_client.InfluxDBClient(url=url, token=token, org=org)

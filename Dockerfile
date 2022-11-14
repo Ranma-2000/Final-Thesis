@@ -4,9 +4,11 @@ COPY requirements.txt requirements.txt
 
 RUN pip3 install -r requirements.txt
 
-ADD main.py .
+ADD main_dev.py .
 
 ADD xgb_ecg.model .
 
-CMD [ "python3", "-u", "read_com.py"]
+ADD connect_local_port.py .
+
+CMD [ "python3", "-u", "main.py"]
 

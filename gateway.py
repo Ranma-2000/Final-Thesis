@@ -68,13 +68,15 @@ while device.is_open:
                 if len(res) > 0:
                     res = re.sub("\r\n", ",", res)
                     res = res.split(",")
+                    res = [r.strip() for r in res]
+                    res.remove('')
+                    print(res)
                     current_timestamp = datetime.datetime.utcnow()
                     for index, heartbeat_data in enumerate(res):
-                        heartbeat_data = heartbeat_data.strip()
                         if len(heartbeat_data) > 0:
                             heartbeats = np.append(heartbeats, int(heartbeat_data))
                             heartbeats = np.delete(heartbeats, 0)
-                            delta = datetime.timedelta(milliseconds=(index - len(res)) * 7.8125)
+                            delta = datetime.timedelta(milliseconds=(index - (len(res) - 1)) * 7.8125)
                             timestamp = datetime.datetime.strftime(current_timestamp + delta, '%Y-%m-%dT %H:%M:%S.%fZ')
                             print(timestamp)
                             database.write_points(create_json(data_point=int(heartbeat_data), time=timestamp))

@@ -12,8 +12,8 @@ def get_available_port():
     return connected_port[0]
 
 
-def connect_serial_port(port, baud_rate=115200):
-    serial_port = serial.Serial(port=port, baudrate=baud_rate, timeout=1)
+def connect_serial_port(port, baud_rate=115200, timeout=1):
+    serial_port = serial.Serial(port=port, baudrate=baud_rate, timeout=timeout)
     return serial_port
 
 

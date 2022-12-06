@@ -6,7 +6,9 @@ import re
 import logging
 from influxdb import InfluxDBClient
 import datetime
+from scipy.signal import butter, sosfilt, sosfilt_zi, sosfiltfilt, lfilter, lfilter_zi, filtfilt, sosfreqz, resample
 import pandas as pd
+import heartpy as hp
 # from database import *
 # import influxdb_client
 # from influxdb_client import InfluxDBClient, Point, WritePrecision
@@ -43,14 +45,6 @@ password = "bete1010"
 database = InfluxDBClient(host=host, port=port, username=username, password=password)
 # database.create_database("IoT")
 database.switch_database('iot_device')
-# token = "KukNM3hreF1X5P32uR-aFOO9nogqcZwuasMYCptw0mghxdUiBforHrAB_vtIkEqmundgnKzPKqvkjJpRQSiv3A=="
-# org = "18146115@student.hcmute.edu.vn"
-# url = "https://us-east-1-1.aws.cloud2.influxdata.com"
-#
-# client = influxdb_client.InfluxDBClient(url=url, token=token, org=org)
-# bucket = "iot_device"
-#
-# write_api = client.write_api(write_options=SYNCHRONOUS)
 
 loop = 0
 while device.is_open:
@@ -61,6 +55,7 @@ while device.is_open:
         if size:
             data = device.read(size)
             res = data.decode("utf-8")
+            # print(len(res))
             x = re.findall(b"\x1b", data)
             if len(x) != 0:
                 continue
@@ -69,33 +64,31 @@ while device.is_open:
                     res = re.sub("\r\n", ",", res)
                     res = res.split(",")
                     current_timestamp = datetime.datetime.utcnow()
+                    res = [r.strip() for r in res if len(r.strip()) > 0]
+                    count_data = 0
                     for index, heartbeat_data in enumerate(res):
-                        heartbeat_data = heartbeat_data.strip()
                         if len(heartbeat_data) > 0:
+                            count_data += 1
                             heartbeats = np.append(heartbeats, int(heartbeat_data))
                             heartbeats = np.delete(heartbeats, 0)
                             delta = datetime.timedelta(milliseconds=(index - len(res)) * 7.8125)
                             timestamp = datetime.datetime.strftime(current_timestamp + delta, '%Y-%m-%dT %H:%M:%S.%fZ')
-                            print(timestamp)
-                            database.write_points(create_json(data_point=int(heartbeat_data), time=timestamp))
-                            # dictionary = {
-                            #     "measurement": "ecg",
-                            #     "tags": {"id": "Ti1sO"},
-                            #     "fields": {"signal": int(heartbeat_data)},
-                            #     "time": timestamp
-                            # }
-                            # point = Point.from_dict(dictionary, write_precision=WritePrecision.NS)
-                            # point = (
-                            #     Point("ecg")
-                            #     .tag("id", "Ti1sO")
-                            #     .field("signal", int(heartbeat_data))
-                            #     .field("_time", timestamp)
-                            #     .write_precision(WritePrecision.NS)
-                            # )
-                            # write_api.write(bucket=bucket, org="18146115@student.hcmute.edu.vn", record=point)
-                            # self.database.insert_data(create_json(data_point=int(heartbeat_data), time=current))
+                            database.write_points(create_json(measurement='raw',
+                                                              data_point=int(heartbeat_data),
+                                                              time=timestamp))
 
-                    output = ecg.ecg(heartbeats, 125, None, False, False)
+                    pd.DataFrame(heartbeats).to_csv(f'data/baseline_wander/raw_{loop}.csv', index=False, header=False)
+                    input_heartbeats = hp.remove_baseline_wander(np.copy(heartbeats), 256)
+                    # print(count_data)
+                    # for index, heartbeat_data in enumerate(res):
+                    #     delta = datetime.timedelta(milliseconds=(index - 15) * 7.8125)
+                    #     timestamp = datetime.datetime.strftime(current_timestamp + delta, '%Y-%m-%dT %H:%M:%S.%fZ')
+                    #     database.write_points(create_json(measurement='test',
+                    #                                       data_point=input_heartbeats[index - 15],
+                    #                                       time=timestamp))
+                    # database.write_points(data_list)
+                    pd.DataFrame(input_heartbeats).to_csv(f'data/baseline_wander/filtered_{loop}.csv', index=False, header=False)
+                    output = ecg.ecg(input_heartbeats, 128, None, False, False)
                     R_peaks = np.copy(output['rpeaks'])
                     R_peaks_index = np.copy(output['rpeaks'])
 
@@ -110,25 +103,32 @@ while device.is_open:
                                                           time=current_timestamp.strftime('%Y-%m-%dT %H:%M:%S.%fZ')))
                         # Append some extra readings from next beat.
                         for idx, r in enumerate(R_peaks):
-                            R_peaks[idx] = max(heartbeats[R_peaks[idx] - 3:R_peaks[idx] + 3])
+                            R_peaks[idx] = max(input_heartbeats[R_peaks[idx] - 3:R_peaks[idx] + 3])
                         if previous_R_peaks is None:
                             previous_R_peaks = np.copy(R_peaks)
                             print('Init: ', previous_R_peaks)
                         if not np.array_equal(previous_R_peaks[-1], R_peaks[-1]):
-                            # print('previous: ', previous_R_peaks)
-                            # print('current: ', R_peaks)
-                            if R_peaks_index[-1] > int(1.2 * mean_time_interval):
-                                # print(R_peaks[-1], "-----------------------------------------------------")
+                            # print(previous_R_peaks, '\n', R_peaks)
+                            # print(R_peaks_index, len(heartbeats), mean_time_interval)
+                            # print(R_peaks_index[-1], R_peaks_index[-1] + int(1.2 * mean_time_interval))
+                            # print(R_peaks[-1], "-----------------------------------------------------")
+                            if (R_peaks_index[-1] + int(1.2 * mean_time_interval)) <= 1250:
+                                # print("OK -----------------------------------")
                                 previous_R_peaks = np.copy(R_peaks)
                                 # print('update: ', self.previous_R_peaks)
-                                beats = heartbeats[R_peaks_index[-1]:R_peaks_index[-1] + int(1.2 * mean_time_interval)]
+                                beats = np.copy(input_heartbeats[R_peaks_index[-1]:(R_peaks_index[-1] + int(1.2 * mean_time_interval))])
                                 # Normalize the readings to a 0-1 range for ML purposes.
                                 beats = (beats - beats.min()) / beats.ptp()
-                                input_beat = DataPreprocessing(beats)
-                                beats = input_beat.moving_average(3)  # Might occur TypeError
+                                # beats = butter_bandpass_forward_backward_filter(beats, 0.05 * 3.3, 2, fs=125, order=5)
+                                # input_beat = DataPreprocessing(beats)
+                                # beats = input_beat.moving_average(3)  # Might occur TypeError
+                                # for index, value in enumerate(beats):
                                 # Pad with zeroes.
                                 zerocount = 187 - beats.size
                                 beats = np.pad(beats, (0, zerocount), 'constant', constant_values=(0.0, 0.0))[np.newaxis]  # Might occur ValueError
+                                with open(f'data/baseline_wander/{loop}_extracted.csv', 'a') as csv:
+                                    for point in beats[0]:
+                                        csv.writelines(str(point) + '\n')
                                 # pd.DataFrame(beats).to_csv(f'{loop}.csv')
                                 result = xgb_model.predict(beats)
                                 if result == 0:
@@ -147,9 +147,10 @@ while device.is_open:
                                     }
                                 }]
                                 database.write_points(json_body)
-                                print(result, output)
-                            else:
-                                print('R peaks are not changed')
+                                # print(result, output)
+                        else:
+                            continue
+                            # print('R peaks are not changed')
     except KeyboardInterrupt:
         break
     except:

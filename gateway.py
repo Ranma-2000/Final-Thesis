@@ -65,27 +65,28 @@ while device.is_open:
                     res = res.split(",")
                     current_timestamp = datetime.datetime.utcnow()
                     res = [r.strip() for r in res if len(r.strip()) > 0]
+                    print('Reset count data')
                     count_data = 0
                     for index, heartbeat_data in enumerate(res):
                         if len(heartbeat_data) > 0:
                             count_data += 1
                             heartbeats = np.append(heartbeats, int(heartbeat_data))
                             heartbeats = np.delete(heartbeats, 0)
-                            delta = datetime.timedelta(milliseconds=(index - len(res)) * 7.8125)
-                            timestamp = datetime.datetime.strftime(current_timestamp + delta, '%Y-%m-%dT %H:%M:%S.%fZ')
-                            database.write_points(create_json(measurement='raw',
-                                                              data_point=int(heartbeat_data),
-                                                              time=timestamp))
+                            # delta = datetime.timedelta(milliseconds=(index - len(res)) * 7.8125)
+                            # timestamp = datetime.datetime.strftime(current_timestamp + delta, '%Y-%m-%dT %H:%M:%S.%fZ')
+                            # database.write_points(create_json(measurement='raw',
+                            #                                   data_point=int(heartbeat_data),
+                            #                                   time=timestamp))
 
                     pd.DataFrame(heartbeats).to_csv(f'data/baseline_wander/raw_{loop}.csv', index=False, header=False)
-                    input_heartbeats = hp.remove_baseline_wander(np.copy(heartbeats), 256)
+                    input_heartbeats = hp.scale_data(hp.remove_baseline_wander(np.copy(heartbeats), 256))
                     # print(count_data)
-                    # for index, heartbeat_data in enumerate(res):
-                    #     delta = datetime.timedelta(milliseconds=(index - 15) * 7.8125)
-                    #     timestamp = datetime.datetime.strftime(current_timestamp + delta, '%Y-%m-%dT %H:%M:%S.%fZ')
-                    #     database.write_points(create_json(measurement='test',
-                    #                                       data_point=input_heartbeats[index - 15],
-                    #                                       time=timestamp))
+                    for index in range(0, count_data, 1):
+                        delta = datetime.timedelta(milliseconds=(index - count_data) * 7.8125)
+                        timestamp = datetime.datetime.strftime(current_timestamp + delta, '%Y-%m-%dT %H:%M:%S.%fZ')
+                        database.write_points(create_json(measurement='test',
+                                                          data_point=input_heartbeats[index - count_data],
+                                                          time=timestamp))
                     # database.write_points(data_list)
                     pd.DataFrame(input_heartbeats).to_csv(f'data/baseline_wander/filtered_{loop}.csv', index=False, header=False)
                     output = ecg.ecg(input_heartbeats, 128, None, False, False)

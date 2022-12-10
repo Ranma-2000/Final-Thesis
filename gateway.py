@@ -65,29 +65,22 @@ while device.is_open:
                     res = res.split(",")
                     current_timestamp = datetime.datetime.utcnow()
                     res = [r.strip() for r in res if len(r.strip()) > 0]
-                    print('Reset count data')
+                    # print('Reset count data')
                     count_data = 0
                     for index, heartbeat_data in enumerate(res):
                         if len(heartbeat_data) > 0:
-                            count_data += 1
+                            # count_data += 1
                             heartbeats = np.append(heartbeats, int(heartbeat_data))
                             heartbeats = np.delete(heartbeats, 0)
-                            # delta = datetime.timedelta(milliseconds=(index - len(res)) * 7.8125)
-                            # timestamp = datetime.datetime.strftime(current_timestamp + delta, '%Y-%m-%dT %H:%M:%S.%fZ')
-                            # database.write_points(create_json(measurement='raw',
-                            #                                   data_point=int(heartbeat_data),
-                            #                                   time=timestamp))
+                            delta = datetime.timedelta(milliseconds=(index - len(res)) * 7.8125)
+                            timestamp = datetime.datetime.strftime(current_timestamp + delta, '%Y-%m-%dT %H:%M:%S.%fZ')
+                            database.write_points(create_json(measurement='raw',
+                                                              data_point=int(heartbeat_data),
+                                                              time=timestamp))
 
                     pd.DataFrame(heartbeats).to_csv(f'data/baseline_wander/raw_{loop}.csv', index=False, header=False)
-                    input_heartbeats = hp.scale_data(hp.remove_baseline_wander(np.copy(heartbeats), 256))
+                    input_heartbeats = hp.scale_data(hp.remove_baseline_wander(np.copy(heartbeats), 256, cutoff=0.01))
                     # print(count_data)
-                    for index in range(0, count_data, 1):
-                        delta = datetime.timedelta(milliseconds=(index - count_data) * 7.8125)
-                        timestamp = datetime.datetime.strftime(current_timestamp + delta, '%Y-%m-%dT %H:%M:%S.%fZ')
-                        database.write_points(create_json(measurement='test',
-                                                          data_point=input_heartbeats[index - count_data],
-                                                          time=timestamp))
-                    # database.write_points(data_list)
                     pd.DataFrame(input_heartbeats).to_csv(f'data/baseline_wander/filtered_{loop}.csv', index=False, header=False)
                     output = ecg.ecg(input_heartbeats, 128, None, False, False)
                     R_peaks = np.copy(output['rpeaks'])
@@ -114,12 +107,18 @@ while device.is_open:
                             # print(R_peaks_index[-1], R_peaks_index[-1] + int(1.2 * mean_time_interval))
                             # print(R_peaks[-1], "-----------------------------------------------------")
                             if (R_peaks_index[-1] + int(1.2 * mean_time_interval)) <= 1250:
-                                # print("OK -----------------------------------")
+                                print("OK -----------------------------------")
                                 previous_R_peaks = np.copy(R_peaks)
                                 # print('update: ', self.previous_R_peaks)
+                                input_heartbeats = hp.scale_data(input_heartbeats, lower=0, upper=1)
                                 beats = np.copy(input_heartbeats[R_peaks_index[-1]:(R_peaks_index[-1] + int(1.2 * mean_time_interval))])
-                                # Normalize the readings to a 0-1 range for ML purposes.
-                                beats = (beats - beats.min()) / beats.ptp()
+                                # for index in range(0, len(beats), 1):
+                                #     delta = datetime.timedelta(milliseconds=(index - len(beats)) * 7.8125)
+                                #     timestamp = datetime.datetime.strftime(current_timestamp + delta, '%Y-%m-%dT %H:%M:%S.%fZ')
+                                #     database.write_points(create_json(measurement='extracted',
+                                #                                       data_point=input_heartbeats[index - len(beats)],
+                                #                                       time=timestamp))
+
                                 # beats = butter_bandpass_forward_backward_filter(beats, 0.05 * 3.3, 2, fs=125, order=5)
                                 # input_beat = DataPreprocessing(beats)
                                 # beats = input_beat.moving_average(3)  # Might occur TypeError
@@ -127,10 +126,7 @@ while device.is_open:
                                 # Pad with zeroes.
                                 zerocount = 187 - beats.size
                                 beats = np.pad(beats, (0, zerocount), 'constant', constant_values=(0.0, 0.0))[np.newaxis]  # Might occur ValueError
-                                with open(f'data/baseline_wander/{loop}_extracted.csv', 'a') as csv:
-                                    for point in beats[0]:
-                                        csv.writelines(str(point) + '\n')
-                                # pd.DataFrame(beats).to_csv(f'{loop}.csv')
+
                                 result = xgb_model.predict(beats)
                                 if result == 0:
                                     output = "Normal"
@@ -148,7 +144,7 @@ while device.is_open:
                                     }
                                 }]
                                 database.write_points(json_body)
-                                # print(result, output)
+                                print(result, output)
                         else:
                             continue
                             # print('R peaks are not changed')

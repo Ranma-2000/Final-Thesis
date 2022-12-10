@@ -21,9 +21,9 @@ def create_json(measurement='ecg', userid='T1lsO', data_point=0.0, time=""):
         "tags": {
             "id": userid
         },
+        "time": time,
         "fields": {
-            "value": data_point,
-            "time": time
+            "value": data_point
         }
     }]
     return json_body
@@ -66,7 +66,8 @@ while device.is_open:
                     current_timestamp = datetime.datetime.utcnow()
                     res = [r.strip() for r in res if len(r.strip()) > 0]
                     # print('Reset count data')
-                    count_data = 0
+                    # count_data = 0
+                    data = []
                     for index, heartbeat_data in enumerate(res):
                         if len(heartbeat_data) > 0:
                             # count_data += 1
@@ -74,9 +75,9 @@ while device.is_open:
                             heartbeats = np.delete(heartbeats, 0)
                             delta = datetime.timedelta(milliseconds=(index - len(res)) * 7.8125)
                             timestamp = datetime.datetime.strftime(current_timestamp + delta, '%Y-%m-%dT %H:%M:%S.%fZ')
-                            database.write_points(create_json(measurement='raw',
-                                                              data_point=int(heartbeat_data),
-                                                              time=timestamp))
+                            data_point = create_json(measurement='raw', data_point=float(heartbeat_data), time=timestamp)
+                            data.append(data_point[0])
+                    database.write_points(data)
 
                     pd.DataFrame(heartbeats).to_csv(f'data/baseline_wander/raw_{loop}.csv', index=False, header=False)
                     input_heartbeats = hp.scale_data(hp.remove_baseline_wander(np.copy(heartbeats), 256, cutoff=0.01))
@@ -126,7 +127,7 @@ while device.is_open:
                                 # Pad with zeroes.
                                 zerocount = 187 - beats.size
                                 beats = np.pad(beats, (0, zerocount), 'constant', constant_values=(0.0, 0.0))[np.newaxis]  # Might occur ValueError
-
+                                pd.DataFrame(beats).to_csv(f'{loop}.csv')
                                 result = xgb_model.predict(beats)
                                 if result == 0:
                                     output = "Normal"
